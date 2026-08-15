@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>toolbox</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <aside id="sidebar-left">
+      <div class="sidebar-label">LINKS</div>
+      <div id="links"></div>
+    </aside>
+
+    <div id="center">
+      <section id="clock">
+        <div class="clock-time"></div>
+        <div class="clock-tz"></div>
+      </section>
+
+      <section id="search">
+        <form>
+          <span class="prompt">$</span>
+          <input type="text" placeholder="search..." autocomplete="off" autofocus>
+        </form>
+      </section>
+    </div>
+
+    <aside id="sidebar-right">
+      <div class="sidebar-label">TOOLS</div>
+      <div id="tools"></div>
+    </aside>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

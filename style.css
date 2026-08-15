@@ -1,0 +1,279 @@
+/* ── Terminal Theme ── */
+:root {
+  --bg: #000000;
+  --green: #00ff41;
+  --green-dim: #00ff4140;
+  --green-faint: #00ff4110;
+  --text: #00ff41;
+  --text-dim: #008f11;
+  --font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
+/* ── Hex Pattern Background ── */
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+  margin: 0;
+  padding: 2rem;
+}
+
+main {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  height: 100vh;
+}
+
+/* ── Sidebars ── */
+aside {
+  flex-shrink: 0;
+}
+
+#sidebar-left {
+  width: 200px;
+}
+
+#sidebar-right {
+  width: 250px;
+}
+
+.sidebar-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--green-dim);
+}
+
+#sidebar-left #links,
+#sidebar-right #tools {
+  max-height: calc(100vh - 8rem);
+  overflow-y: auto;
+}
+
+/* ── Center ── */
+#center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3rem;
+  padding: 2rem 0;
+}
+
+/* ── Clock ── */
+#clock {
+  text-align: center;
+}
+
+.clock-time {
+  font-size: 3.5rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 10px var(--green-dim), 0 0 30px var(--green-dim);
+  line-height: 1.1;
+}
+
+.clock-ampm {
+  font-size: 1.2rem;
+  vertical-align: super;
+  margin-left: 0.25rem;
+  color: var(--text-dim);
+}
+
+.clock-tz {
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+
+/* ── Search ── */
+#search {
+  width: 100%;
+  align-items: center;
+}
+
+#search form {
+  display: flex;
+  border: 1px solid var(--green-dim);
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  background: #00000080;
+  box-shadow: 0 0 15px var(--green-dim);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+#search form:focus-within {
+  border-color: var(--green);
+  box-shadow: 0 0 25px var(--green-dim);
+}
+
+.prompt {
+  color: var(--green);
+  margin-right: 0.75rem;
+  font-weight: 700;
+  text-shadow: 0 0 8px var(--green-dim);
+  user-select: none;
+}
+
+#search input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font);
+  font-size: 1rem;
+  color: var(--text);
+  caret-color: var(--green);
+}
+
+#search input::placeholder {
+  color: var(--text-dim);
+}
+
+/* ── Links ── */
+#links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.link-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 0.85rem;
+  letter-spacing: 0.03em;
+  transition: all 0.2s ease;
+}
+
+.link-item:hover {
+  border-color: var(--green-dim);
+  color: var(--green);
+  box-shadow: 0 0 12px var(--green-dim);
+  text-shadow: 0 0 6px var(--green-dim);
+}
+
+.link-icon {
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+/* ── Tools ── */
+.tool-card {
+  border: 1px solid var(--green-dim);
+  border-radius: 4px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  background: #00000080;
+}
+
+.tool-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.3rem;
+}
+
+.tool-description {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
+}
+
+.tool-action {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  border: 1px solid var(--green-dim);
+  border-radius: 4px;
+  color: var(--green);
+  font-family: var(--font);
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tool-action:hover {
+  border-color: var(--green);
+  box-shadow: 0 0 12px var(--green-dim);
+  text-shadow: 0 0 6px var(--green-dim);
+}
+
+.tool-result {
+  margin-top: 0.75rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-shadow: 0 0 10px var(--green-dim), 0 0 30px var(--green-dim);
+  min-height: 1.5em;
+  line-height: 1.3;
+}
+
+.copy-btn {
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.copy-btn:hover {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.copy-btn[style*="Copied"] {
+  color: var(--green);
+  border-color: var(--green);
+  box-shadow: 0 0 12px var(--green-dim);
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  body {
+    padding: 1rem;
+  }
+
+  main {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #sidebar-left,
+  #sidebar-right {
+    width: 100%;
+  }
+
+  #sidebar-left #links,
+  #sidebar-right #tools {
+    max-height: none;
+  }
+
+  #center {
+    gap: 2rem;
+    padding: 1rem 0;
+    width: 100%;
+  }
+
+  .clock-time {
+    font-size: 2.5rem;
+  }
+
+  #search form {
+    max-width: 100%;
+  }
+}

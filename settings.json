@@ -1,0 +1,24 @@
+{
+  "clock": {
+    "format": "24h"
+  },
+  "search": {
+    "url": "https://duckduckgo.com/?q=%s",
+    "placeholder": "search..."
+  },
+  "links": [
+    { "name": "GitHub", "url": "https://github.com", "icon": "⌘" },
+    { "name": "GitLab", "url": "https://gitlab.com", "icon": "◆" },
+    { "name": "Docker", "url": "http://localhost:2375", "icon": "▦" },
+    { "name": "Proxmox", "url": "https://your-proxmox:8006", "icon": "⬡" },
+    { "name": "Notes", "url": "https://notes.example.com", "icon": "☰" }
+  ],
+  "tools": [
+    {
+      "id": "codename",
+      "name": "Codename Generator",
+      "description": "Generate NSA-style code names",
+      "type": "codename"
+    }
+  ]
+}
