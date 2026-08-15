@@ -18,7 +18,7 @@
       "id": "codename",
       "name": "Codename Generator",
       "description": "Generate NSA-style code names",
-      "type": "codename"
+      "url": "tools/codename.js"
     }
   ]
 }

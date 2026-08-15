@@ -48,30 +48,93 @@ A minimal, offline-capable browser start page with a hacker/terminal aesthetic. 
 │  └────────┘  └──────────────────────┘  └──────────┘  │
 │                                                       │
 │  ┌─────────────────────────────────────────────────┐  │
-│  │              app.js (logic)                      │  │
+│  │         app.js (logic + plugin loader)           │  │
 │  │              style.css (looks)                   │  │
 │  │         settings.json (fetched)                  │  │
+│  │         tools/*.js (loaded dynamically)          │  │
 │  └─────────────────────────────────────────────────┘  │
 └───────────────────────────────────────────────────────┘
 ```
 
-Three-column layout: left sidebar (links), center (clock + search), right sidebar (tools). All logic in `app.js`. All styles in `style.css`. Settings in `settings.json` (injected as inline JSON into the HTML).
+Three-column layout: left sidebar (links), center (clock + search), right sidebar (tools). All logic in `app.js`. All styles in `style.css`. Settings in `settings.json` (injected as inline JSON into the HTML). Tools are loaded as independent `.js` plugins from the `tools/` directory.
 
 ## Components
 
-### Tool: Codename Generator (`#sidebar-right`)
+### Tool: Plugin Architecture (`#sidebar-right`)
 
-**What:** Generates NSA-style two-part code names (e.g., "IRON HAWK", "SILVER STORM").
+Tools are loaded as independent `.js` files from the `tools/` directory. Each tool is a self-contained plugin.
 
-**Spec:**
-- One button: "Generate Codename"
+**Config schema:**
+```json
+{
+  "tools": [
+    {
+      "id": "codename",
+      "name": "Codename Generator",
+      "description": "Generate NSA-style code names",
+      "url": "tools/codename.js"
+    }
+  ]
+}
+```
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `id` | string | yes | Unique tool identifier |
+| `name` | string | yes | Display name |
+| `description` | string | yes | Shown under the tool title |
+| `url` | string | yes | Path to the tool's `.js` file (relative to page root) |
+
+**Plugin API:**
+
+Each tool file must define a global `renderTool(tool)` function that returns an HTML string:
+
+```js
+// tools/mytool.js
+function renderTool(tool) {
+  return `
+    <div class="tool-card" id="tool-${tool.id}">
+      <div class="tool-title">${tool.name}</div>
+      <div class="tool-description">${tool.description}</div>
+      <button class="tool-action" onclick="window.tools.mytool.doThing()">Do Thing</button>
+      <div class="tool-result" id="mytool-result"></div>
+    </div>
+  `;
+}
+```
+
+For event handlers, expose functions on `window.tools.<id>`:
+
+```js
+window.tools = window.tools || {};
+window.tools.mytool = {
+  doThing() {
+    // your logic here
+    document.getElementById("mytool-result").textContent = "done";
+  }
+};
+```
+
+**Rules:**
+- No build step. Plain `.js` files.
+- No external dependencies.
+- Tool files run in the global scope — avoid polluting `window` beyond `window.tools.<id>`.
+- The `tool` parameter is the full config object from `settings.json`.
+- Use `tool.id`, `tool.name`, `tool.description` for rendering.
+- Error handling: if a tool script fails to load, it's silently skipped (no errors shown).
+
+**Example: Codename Generator** (`tools/codename.js`)
+
+Generates NSA-style two-part code names (e.g., "IRON HAWK", "SILVER STORM").
+
+- One button: "Generate"
 - On click: picks a random adjective + random noun from internal word lists
 - Displays the generated codename in large terminal-green text with glow
 - Each click produces a new random codename
-- Word lists are hardcoded in `app.js` (no external calls)
+- Word lists are hardcoded in `tools/codename.js` (no external calls)
 - Example outputs: "DARK PHOENIX", "BLUE VIPER", "STEEL THUNDER", "SHADOW REAPER"
 
-**Word Lists (internal, in `app.js`):**
+**Word Lists (internal, in `tools/codename.js`):**
 - Adjectives: IRON, SILVER, DARK, BLUE, STEEL, SHADOW, STEALTH, CRIMSON, FROST, GHOST, etc.
 - Nouns: HAWK, STORM, VIPER, THUNDER, REAPER, FALCON, WOLF, PHANTOM, DRAGON, etc.
 
@@ -143,7 +206,7 @@ Three-column layout: left sidebar (links), center (clock + search), right sideba
       "id": "codename",
       "name": "Codename Generator",
       "description": "Generate NSA-style code names",
-      "type": "codename"
+      "url": "tools/codename.js"
     }
   ]
 }
@@ -155,7 +218,7 @@ Three-column layout: left sidebar (links), center (clock + search), right sideba
 | `search.url` | string | `https://duckduckgo.com/?q=%s` | `%s` is replaced with the query |
 | `search.placeholder` | string | `"search..."` | Placeholder text in the search bar |
 | `links` | array of `{name, url, icon}` | `[]` | Quick link shortcuts. `icon` is optional. Renders in left sidebar. |
-| `tools` | array of `{id, name, description, type}` | `[]` | Tools rendered in right sidebar. See tool specs below. |
+| `tools` | array of `{id, name, description, url}` | `[]` | Tool plugins rendered in right sidebar. Each `url` points to a `.js` file in `tools/`. |
 
 ## Data Flow
 
@@ -170,7 +233,9 @@ app.js
 │  initClock() → reads timezone from browser           │
 │  initSearch() → reads URL from config                │
 │  initLinks() → reads links from config → left sidebar│
-│  initTools() → reads tools from config → right sidebar│
+│  initTools() → loads tool plugins → right sidebar    │
+│    loadToolScript(url) → <script> tag injection       │
+│    renderTool(tool) → HTML string from plugin        │
 └─────────────────────────────────────────────────────┘
 ```
 

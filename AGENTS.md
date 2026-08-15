@@ -19,8 +19,10 @@ Open `http://localhost:8080` in a browser.
 ULTRABOX/
 ├── index.html          # Single page entry point
 ├── style.css           # All styles (terminal theme, hex bg)
-├── app.js              # All application logic
+├── app.js              # Core app logic + plugin loader
 ├── settings.json       # User configuration (edit manually, reload page)
+├── tools/              # Tool plugins (one .js per tool)
+│   └── codename.js     # Example tool plugin
 ├── AGENTS.md     # ← you are here
 └── favicon.svg         # Terminal-style favicon
 ```
@@ -47,7 +49,7 @@ All config lives in one file. **No in-browser editor.** Edit the file, refresh t
       "id": "codename",
       "name": "Codename Generator",
       "description": "Generate NSA-style code names",
-      "type": "codename"
+      "url": "tools/codename.js"
     }
   ]
 }
@@ -61,18 +63,70 @@ All config lives in one file. **No in-browser editor.** Edit the file, refresh t
 | `search.url` | string | `https://duckduckgo.com/?q=%s` | `%s` is replaced with the query |
 | `search.placeholder` | string | `"search..."` | Placeholder text in the search bar |
 | `links` | array of `{name, url, icon}` | `[]` | Quick link shortcuts. `icon` is optional. Renders in left sidebar. |
-| `tools` | array of `{id, name, description, type}` | `[]` | Tools rendered in right sidebar. See tool specs below. |
+| `tools` | array of `{id, name, description, url}` | `[]` | Tool plugins rendered in right sidebar. Each `url` points to a `.js` file in `tools/`. |
 
-### Tool: Codename Generator
+### Tool: Plugin Architecture
 
-| Property | Value | Notes |
-|----------|-------|-------|
-| `id` | `"codename"` | Unique tool identifier |
-| `name` | `"Codename Generator"` | Display name |
-| `description` | `"Generate NSA-style code names"` | Shown under the tool title |
-| `type` | `"codename"` | Determines rendering logic |
+Tools are loaded as independent `.js` files from the `tools/` directory. Each tool is a self-contained plugin.
 
-**Behavior:** Clicking the "Generate" button picks a random adjective + noun from hardcoded lists and displays the result in large terminal-green text with glow. No network calls. Word lists are embedded in `app.js`. Example outputs: "IRON HAWK", "SILVER STORM", "DARK PHOENIX", "BLUE VIPER".
+**Config schema:**
+```json
+{
+  "tools": [
+    {
+      "id": "codename",
+      "name": "Codename Generator",
+      "description": "Generate NSA-style code names",
+      "url": "tools/codename.js"
+    }
+  ]
+}
+```
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `id` | string | yes | Unique tool identifier |
+| `name` | string | yes | Display name |
+| `description` | string | yes | Shown under the tool title |
+| `url` | string | yes | Path to the tool's `.js` file (relative to page root) |
+
+### Writing a Tool Plugin
+
+Each tool file must define a global `renderTool(tool)` function that returns an HTML string:
+
+```js
+// tools/mytool.js
+function renderTool(tool) {
+  return `
+    <div class="tool-card" id="tool-${tool.id}">
+      <div class="tool-title">${tool.name}</div>
+      <div class="tool-description">${tool.description}</div>
+      <button class="tool-action" onclick="window.tools.mytool.doThing()">Do Thing</button>
+      <div class="tool-result" id="mytool-result"></div>
+    </div>
+  `;
+}
+```
+
+For event handlers, expose functions on `window.tools.<id>`:
+
+```js
+window.tools = window.tools || {};
+window.tools.mytool = {
+  doThing() {
+    // your logic here
+    document.getElementById("mytool-result").textContent = "done";
+  }
+};
+```
+
+**Rules:**
+- No build step. Plain `.js` files.
+- No external dependencies.
+- Tool files run in the global scope — avoid polluting `window` beyond `window.tools.<id>`.
+- The `tool` parameter is the full config object from `settings.json`.
+- Use `tool.id`, `tool.name`, `tool.description` for rendering.
+- Error handling: if a tool script fails to load, it's silently skipped (no errors shown).
 
 ## Code Conventions
 
@@ -98,7 +152,8 @@ All config lives in one file. **No in-browser editor.** Edit the file, refresh t
 - Functions are named and grouped by feature: `initClock()`, `initSearch()`, `initLinks()`, `initTools()`
 - `loadSettings()` reads the inline JSON blob injected by `index.html`
 - All DOM manipulation happens after `DOMContentLoaded`
-- Codename generator uses hardcoded word lists (adjectives + nouns) for NSA-style name generation
+- `initTools()` loads tool plugins dynamically from URLs in settings.json
+- Each tool plugin defines `renderTool(tool)` and optionally exposes actions on `window.tools.<id>`
 
 ### Error Handling (Offline / API Failures)
 - **Never show error messages or alerts**
@@ -111,6 +166,14 @@ All config lives in one file. **No in-browser editor.** Edit the file, refresh t
 2. Add styles to `style.css`
 3. Add logic to `app.js` under the relevant feature group
 4. Add config fields to `settings.json` if needed
+5. Update this README
+
+### Adding a Tool Plugin
+
+1. Create `tools/<id>.js`
+2. Define `renderTool(tool)` returning HTML
+3. Expose action functions on `window.tools.<id>`
+4. Add entry to `settings.json` tools array with `url: "tools/<id>.js"`
 5. Update this README
 
 ## Testing
