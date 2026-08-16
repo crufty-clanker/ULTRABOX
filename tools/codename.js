@@ -66,7 +66,7 @@ window.tools.codename = {
   generate() {
     const adj = CODENAME_ADJECTIVES[Math.floor(Math.random() * CODENAME_ADJECTIVES.length)];
     const noun = CODENAME_NOUNS[Math.floor(Math.random() * CODENAME_NOUNS.length)];
-    const codename = `${adj} ${noun}`;
+    const codename = `${adj}${noun}`;
     const result = document.getElementById("codename-result");
     const copyBtn = document.querySelector(".copy-btn");
     if (result) result.textContent = codename;
