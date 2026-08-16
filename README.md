@@ -266,7 +266,9 @@ Add to `settings.json`:
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+All files are REUSE-compliant. See [LICENSES/](LICENSES/) directory for full license texts.
 
 ## Contributing
 

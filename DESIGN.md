@@ -175,6 +175,16 @@ The server caches API responses in-memory to prevent rate limiting from external
 - Improves response times for repeated requests
 - Simple implementation with no external dependencies
 
+## License and Compliance
+
+This project follows the REUSE specification for license and copyright management.
+All files contain SPDX headers with copyright and license information.
+
+- **License:** MIT
+- **REUSE compliant:** Yes
+- **License files:** See [LICENSES/](LICENSES/) directory
+- **Configuration:** See [REUSE.toml](REUSE.toml)
+
 ## Deployment
 
 ### Objectives

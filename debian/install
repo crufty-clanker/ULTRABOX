@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Toolbox Authors
+# SPDX-License-Identifier: MIT
+
 opt/toolbox/toolbox usr/local/bin
 opt/toolbox/index.html opt/toolbox
 opt/toolbox/style.css opt/toolbox

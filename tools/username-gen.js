@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Toolbox Authors
+// SPDX-License-Identifier: MIT
+
 // ── Username Generator Tool ──
 // Plugin API: define `renderTool(tool)` — returns HTML string.
 // Expose any action functions on `window.tools.<id>`.

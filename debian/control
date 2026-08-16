@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Toolbox Authors
+# SPDX-License-Identifier: MIT
+
 Source: toolbox
 Section: web
 Priority: optional

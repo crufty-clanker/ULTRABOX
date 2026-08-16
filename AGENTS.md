@@ -359,3 +359,21 @@ window.tools.mytool = {
 - **No external JS/CSS CDN dependencies.** Everything self-contained.
 - **Settings are read once at load.** Changing `settings.json` requires a page reload.
 - **Never invent features.** Only implement what is explicitly specified in DESIGN.md or AGENTS.md, or what the user directly asks for. Do not assume or add features that are not documented.
+
+## License and REUSE Compliance
+
+This project is REUSE-compliant. All files contain SPDX headers with copyright and license information.
+
+- **License:** MIT
+- **License file:** [LICENSE](LICENSE)
+- **License texts:** [LICENSES/](LICENSES/) directory
+- **Configuration:** [REUSE.toml](REUSE.toml)
+
+When adding new files, always include the SPDX header:
+
+```
+// SPDX-FileCopyrightText: 2026 Toolbox Authors
+// SPDX-License-Identifier: MIT
+```
+
+Format varies by file type (see DESIGN.md for examples).

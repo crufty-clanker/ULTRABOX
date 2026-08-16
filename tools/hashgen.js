@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Toolbox Authors
+// SPDX-License-Identifier: MIT
+
 // ── Hash Generator Tool ──
 // Supports: MD5, SHA-256, SHA-512
 // Plugin API: define `renderTool(tool)` — returns HTML string.

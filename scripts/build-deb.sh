@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Toolbox Authors
+# SPDX-License-Identifier: MIT
+
 #!/bin/bash
 # Build Debian package for Toolbox
 set -e

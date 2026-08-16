@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 Toolbox Authors
+# SPDX-License-Identifier: MIT
+
+version = 1
+
+# Default license for all files
+default_spdx_expression = "MIT"
+
+# Annotations for specific paths
+[[annotations]]
+path = ["LICENSES/*"]
+spdx-expression = "MIT"
+copyright = ["Free Software Foundation Europe e.V."]
+
+[[annotations]]
+path = [".github/**", "scripts/**", "debian/**"]
+spdx-expression = "MIT"
+copyright = ["2026 Toolbox Authors"]
+
+[[annotations]]
+path = ["tools/*.js"]
+spdx-expression = "MIT"
+copyright = ["2026 Toolbox Authors"]
