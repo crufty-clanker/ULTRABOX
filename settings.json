@@ -40,6 +40,18 @@
       "name": "Hash Generator",
       "description": "MD5, SHA-256, SHA-512 for any input string",
       "url": "tools/hashgen.js"
+    },
+    {
+      "id": "bcrypt",
+      "name": "Bcrypt Hash Generator",
+      "description": "Generate bcrypt hashes for passwords",
+      "url": "tools/bcrypt.js"
+    },
+    {
+      "id": "username-gen",
+      "name": "Username Generator",
+      "description": "Generate plausible usernames",
+      "url": "tools/username-gen.js"
     }
   ]
 }

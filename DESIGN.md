@@ -82,7 +82,8 @@ ULTRABOX/
 ├── tools/
 │   ├── codename.js     # NSA-style codename generator
 │   ├── hashgen.js      # MD5, SHA-256, SHA-512 hash generator
-│   └── bcrypt.js       # bcrypt hash generator
+│   ├── bcrypt.js       # bcrypt hash generator
+│   └── username-gen.js # Plausible username generator
 ├── server/
 │   ├── main.go         # Go server entry point
 │   ├── go.mod          # Go module definition
@@ -280,6 +281,23 @@ Generates a bcrypt hash for any input string using a pure-JS bcrypt implementati
 - Example output (for "hello", cost 10):
   - `$2b$10$<60-char bcrypt hash>`
 
+**Example: Username Generator** (`tools/username-gen.js`)
+
+Generates plausible usernames by combining random words, numbers, and separators.
+
+- "Generate" button produces a new random username
+- Displays the generated username in large terminal-green text with glow
+- Each click produces a new random username
+- Copy button to copy the username to clipboard
+- Word lists are hardcoded (no external calls)
+- Example outputs: "fox-runner42", "silent-pixel99", "neon-tiger7"
+
+**Word Lists (internal, in `tools/username-gen.js`):**
+- Adjectives: SILVER, DARK, NEON, SILENT, FAST, CYBER, LUNAR, etc.
+- Nouns: FOX, PANDA, TIGER, WOLF, HAWK, DRAGON, PHOENIX, etc.
+- Separators: `-`, `_`, `.`, ``, (empty)
+- Number range: 0-999
+
 ### 1. Clock (`#clock`)
 
 **What:** Current time in the user's local timezone.
@@ -395,6 +413,12 @@ Generates a bcrypt hash for any input string using a pure-JS bcrypt implementati
       "name": "Bcrypt Hash Generator",
       "description": "Generate bcrypt hashes for passwords",
       "url": "tools/bcrypt.js"
+    },
+    {
+      "id": "username-gen",
+      "name": "Username Generator",
+      "description": "Generate plausible usernames",
+      "url": "tools/username-gen.js"
     }
   ]
 }
