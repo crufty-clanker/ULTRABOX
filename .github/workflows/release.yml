@@ -27,7 +27,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Get version from input or tag
         id: version
@@ -55,10 +55,10 @@ jobs:
         arch: [amd64, arm64]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -71,7 +71,7 @@ jobs:
           CGO_ENABLED: 0
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: toolbox-${{ matrix.os }}-${{ matrix.arch }}
           path: toolbox-${{ matrix.os }}-${{ matrix.arch }}
@@ -83,7 +83,7 @@ jobs:
     needs: [version, build]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -108,7 +108,7 @@ jobs:
           mv debian/toolbox.deb toolbox_${{ needs.version.outputs.version }}_amd64.deb
 
       - name: Upload amd64 package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: toolbox_${{ needs.version.outputs.version }}_amd64.deb
           path: toolbox_${{ needs.version.outputs.version }}_amd64.deb
@@ -120,7 +120,7 @@ jobs:
     needs: version
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Create role archive
         run: |
@@ -128,7 +128,7 @@ jobs:
           tar -czf toolbox-role-${{ needs.version.outputs.version }}.tar.gz toolbox/
 
       - name: Upload role
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: toolbox-role-${{ needs.version.outputs.version }}.tar.gz
           path: ansible/roles/toolbox-role-${{ needs.version.outputs.version }}.tar.gz
@@ -140,7 +140,7 @@ jobs:
     needs: [version, build, package, zip-role]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -149,7 +149,7 @@ jobs:
           path: artifacts/
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: artifacts/*
           name: "Release ${{ needs.version.outputs.version }}"
