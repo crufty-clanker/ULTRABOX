@@ -152,6 +152,28 @@ Fetches and parses RSS/Atom XML, returns JSON:
 }
 ```
 
+### Caching
+
+The server caches API responses in-memory to prevent rate limiting from external APIs.
+
+| Endpoint | Cache TTL | Rationale |
+|----------|-----------|-----------|
+| `/api/rss?url=...` | 5 minutes | RSS feeds don't change frequently |
+| `/api/github/pulls?...` | 2 minutes | PRs can change more often, but still benefit from caching |
+
+**Cache behavior:**
+- In-memory map with TTL-based expiration
+- Cache key is derived from the request parameters (e.g., `rss:<url>`, `github:<org>:<user>`)
+- Expired entries are removed on access (lazy deletion)
+- No persistence across server restarts
+- No cache invalidation API (simple design)
+
+**Why:**
+- Prevents rate limiting from GitHub API (60 req/hr without auth)
+- Reduces load on RSS feed endpoints
+- Improves response times for repeated requests
+- Simple implementation with no external dependencies
+
 ## Components
 
 ### Tool: Plugin Architecture (`#sidebar-right`)

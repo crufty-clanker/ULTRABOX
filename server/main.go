@@ -17,6 +17,49 @@ type serverConfig struct {
 	Port int `json:"port"`
 }
 
+// ── Cache ──
+
+type cacheEntry struct {
+	data      interface{}
+	expiresAt time.Time
+}
+
+type cache struct {
+	items map[string]cacheEntry
+	ttl   time.Duration
+}
+
+func newCache(ttl time.Duration) *cache {
+	return &cache{
+		items: make(map[string]cacheEntry),
+		ttl:   ttl,
+	}
+}
+
+func (c *cache) get(key string) (interface{}, bool) {
+	entry, exists := c.items[key]
+	if !exists {
+		return nil, false
+	}
+	if time.Now().After(entry.expiresAt) {
+		// Expired, remove it
+		delete(c.items, key)
+		return nil, false
+	}
+	return entry.data, true
+}
+
+func (c *cache) set(key string, data interface{}) {
+	c.items[key] = cacheEntry{
+		data:      data,
+		expiresAt: time.Now().Add(c.ttl),
+	}
+}
+
+func (c *cache) clear() {
+	c.items = make(map[string]cacheEntry)
+}
+
 func loadConfig() serverConfig {
 	cfg := serverConfig{Port: 8080}
 
@@ -49,12 +92,19 @@ type rssResponse struct {
 	Items []rssItem   `json:"items"`
 }
 
-func handleRSS(w http.ResponseWriter, r *http.Request) {
+func handleRSS(w http.ResponseWriter, r *http.Request, cache *cache) {
 	setCORSHeaders(w)
 
 	url := r.URL.Query().Get("url")
 	if url == "" {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "missing url parameter"})
+		return
+	}
+
+	// Check cache
+	cacheKey := "rss:" + url
+	if cached, ok := cache.get(cacheKey); ok {
+		writeJSON(w, http.StatusOK, cached)
 		return
 	}
 
@@ -95,10 +145,15 @@ func handleRSS(w http.ResponseWriter, r *http.Request) {
 		items = items[:10]
 	}
 
-	writeJSON(w, http.StatusOK, rssResponse{
+	response := rssResponse{
 		Title: title,
 		Items: items,
-	})
+	}
+
+	// Cache the response
+	cache.set(cacheKey, response)
+
+	writeJSON(w, http.StatusOK, response)
 }
 
 func parseRSS(xmlContent string) ([]rssItem, string, error) {
@@ -237,7 +292,7 @@ type githubPRResponse struct {
 	PRs []githubPR `json:"prs"`
 }
 
-func handleGitHub(w http.ResponseWriter, r *http.Request) {
+func handleGitHub(w http.ResponseWriter, r *http.Request, cache *cache) {
 	setCORSHeaders(w)
 
 	org := r.URL.Query().Get("org")
@@ -245,6 +300,13 @@ func handleGitHub(w http.ResponseWriter, r *http.Request) {
 
 	if org == "" && user == "" {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "missing org or user parameter"})
+		return
+	}
+
+	// Check cache
+	cacheKey := "github:" + org + ":" + user
+	if cached, ok := cache.get(cacheKey); ok {
+		writeJSON(w, http.StatusOK, cached)
 		return
 	}
 
@@ -283,7 +345,12 @@ func handleGitHub(w http.ResponseWriter, r *http.Request) {
 		allPRs = []githubPR{}
 	}
 
-	writeJSON(w, http.StatusOK, githubPRResponse{PRs: allPRs})
+	response := githubPRResponse{PRs: allPRs}
+
+	// Cache the response
+	cache.set(cacheKey, response)
+
+	writeJSON(w, http.StatusOK, response)
 }
 
 func fetchOrgPRs(org string) ([]githubPR, error) {
@@ -465,16 +532,27 @@ func main() {
 		log.Fatal("Failed to get working directory:", err)
 	}
 
+	// Create caches with different TTLs
+	// RSS feeds: 5 minutes (feeds don't change often)
+	rssCache := newCache(5 * time.Minute)
+	// GitHub API: 2 minutes (PRs can change more frequently)
+	githubCache := newCache(2 * time.Minute)
+
 	// Serve static files from project root
 	http.Handle("/", http.FileServer(http.Dir(projectRoot)))
 
 	// API routes
-	http.HandleFunc("/api/rss", handleRSS)
-	http.HandleFunc("/api/github/pulls", handleGitHub)
+	http.HandleFunc("/api/rss", func(w http.ResponseWriter, r *http.Request) {
+		handleRSS(w, r, rssCache)
+	})
+	http.HandleFunc("/api/github/pulls", func(w http.ResponseWriter, r *http.Request) {
+		handleGitHub(w, r, githubCache)
+	})
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	log.Printf("Toolbox server starting on http://localhost%s", addr)
 	log.Printf("Static files served from: %s", projectRoot)
+	log.Printf("Cache TTLs: RSS=5min, GitHub=2min")
 
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Fatal("Server failed:", err)
