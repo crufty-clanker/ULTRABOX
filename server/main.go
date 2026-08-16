@@ -97,6 +97,7 @@ func handleRSS(w http.ResponseWriter, r *http.Request, cache *cache) {
 
 	url := r.URL.Query().Get("url")
 	if url == "" {
+		log.Printf("RSS: bad request - missing url parameter")
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "missing url parameter"})
 		return
 	}
@@ -104,9 +105,12 @@ func handleRSS(w http.ResponseWriter, r *http.Request, cache *cache) {
 	// Check cache
 	cacheKey := "rss:" + url
 	if cached, ok := cache.get(cacheKey); ok {
+		log.Printf("RSS: %s [CACHED]", url)
 		writeJSON(w, http.StatusOK, cached)
 		return
 	}
+
+	log.Printf("RSS: fetching %s", url)
 
 	// Fetch the feed
 	resp, err := http.Get(url)
@@ -153,6 +157,7 @@ func handleRSS(w http.ResponseWriter, r *http.Request, cache *cache) {
 	// Cache the response
 	cache.set(cacheKey, response)
 
+	log.Printf("RSS: fetched %d items from %s", len(items), url)
 	writeJSON(w, http.StatusOK, response)
 }
 
@@ -299,6 +304,7 @@ func handleGitHub(w http.ResponseWriter, r *http.Request, cache *cache) {
 	user := r.URL.Query().Get("user")
 
 	if org == "" && user == "" {
+		log.Printf("GitHub: bad request - missing org or user parameter")
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "missing org or user parameter"})
 		return
 	}
@@ -306,8 +312,15 @@ func handleGitHub(w http.ResponseWriter, r *http.Request, cache *cache) {
 	// Check cache
 	cacheKey := "github:" + org + ":" + user
 	if cached, ok := cache.get(cacheKey); ok {
+		log.Printf("GitHub: %s [%s] [CACHED]", org, user)
 		writeJSON(w, http.StatusOK, cached)
 		return
+	}
+
+	if org != "" {
+		log.Printf("GitHub: fetching PRs for org %s", org)
+	} else {
+		log.Printf("GitHub: fetching PRs for user %s", user)
 	}
 
 	var allPRs []githubPR
@@ -350,12 +363,13 @@ func handleGitHub(w http.ResponseWriter, r *http.Request, cache *cache) {
 	// Cache the response
 	cache.set(cacheKey, response)
 
+	log.Printf("GitHub: fetched %d PRs for %s [%s]", len(allPRs), org, user)
 	writeJSON(w, http.StatusOK, response)
 }
 
 func fetchOrgPRs(org string) ([]githubPR, error) {
-	url := fmt.Sprintf("https://api.github.com/repos/%s/*/pulls?state=open&sort=created&direction=desc&per_page=10", org)
-	return fetchGitHubAPI(url)
+	url := fmt.Sprintf("https://api.github.com/search/issues?q=type:pr+org:%s+state:open&sort=created&order=desc&per_page=10", org)
+	return fetchGitHubSearchAPI(url)
 }
 
 func fetchUserPRs(username string) ([]githubPR, error) {
@@ -538,8 +552,16 @@ func main() {
 	// GitHub API: 2 minutes (PRs can change more frequently)
 	githubCache := newCache(2 * time.Minute)
 
+	// Logging middleware
+	httpLogging := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			log.Printf("%s %s", r.Method, r.URL.Path)
+			next.ServeHTTP(w, r)
+		})
+	}
+
 	// Serve static files from project root
-	http.Handle("/", http.FileServer(http.Dir(projectRoot)))
+	http.Handle("/", httpLogging(http.FileServer(http.Dir(projectRoot))))
 
 	// API routes
 	http.HandleFunc("/api/rss", func(w http.ResponseWriter, r *http.Request) {
