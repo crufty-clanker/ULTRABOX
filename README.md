@@ -2,7 +2,7 @@
 
 A minimal, offline-capable browser start page with a hacker/terminal aesthetic. Single user. Plain HTML + CSS + JS. No build step. No dependencies.
 
-![Terminal Theme](https://img.shields.io/badge/theme-terminal-green) ![Offline](https://img.shields.io/badge/status-offline--capable-brightgreen)
+![Terminal Theme](https://img.shields.io/badge/theme-terminal-green) ![Offline](https://img.shields.io/badge/status-offline--capable-brightgreen) [![AI Usage Scale: Level 4 — Prompted](https://img.shields.io/badge/AI_Usage_Level-4_Prompted-e67e22?style=flat)](https://usagescale.org/4)
 
 ## Features
 
