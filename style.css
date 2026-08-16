@@ -303,9 +303,9 @@ aside {
   transition: color 0.2s ease;
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
 }
 
 .feed-link a:hover {
@@ -339,6 +339,9 @@ aside {
   line-height: 1.4;
   margin-bottom: 0.25rem;
   transition: color 0.2s ease, text-shadow 0.2s ease;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
 }
 
 .pr-title:hover {
