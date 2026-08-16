@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -10,6 +11,10 @@ import (
 	"strings"
 	"time"
 )
+
+// ── Version ──
+
+var Version = "dev"
 
 // ── Config ──
 
@@ -60,15 +65,22 @@ func (c *cache) clear() {
 	c.items = make(map[string]cacheEntry)
 }
 
-func loadConfig() serverConfig {
+func loadConfig(configPath string) serverConfig {
 	cfg := serverConfig{Port: 8080}
 
-	data, err := os.ReadFile("./server.json")
+	// Use provided path or default
+	if configPath == "" {
+		configPath = "./server.json"
+	}
+
+	data, err := os.ReadFile(configPath)
 	if err != nil {
+		log.Printf("Warning: Could not read config file %s: %v", configPath, err)
 		return cfg
 	}
 
 	if err := json.Unmarshal(data, &cfg); err != nil {
+		log.Printf("Warning: Could not parse config file %s: %v", configPath, err)
 		return serverConfig{Port: 8080}
 	}
 
@@ -77,6 +89,36 @@ func loadConfig() serverConfig {
 	}
 
 	return cfg
+}
+
+func setupLogging(logPath string) {
+	// Check if running under systemd
+	isSystemd := os.Getenv("SYSTEMD_LOG_LEVEL") != "" || os.Getenv("JOURNAL_STREAM") != ""
+
+	switch logPath {
+	case "journald":
+		if isSystemd {
+			log.Printf("Logging to journald (detected systemd)")
+		} else {
+			log.Printf("Warning: --log=journald specified but not running under systemd, falling back to stderr")
+			logPath = "stderr"
+		}
+		fallthrough
+	case "stderr":
+		log.SetOutput(os.Stderr)
+	case "stdout":
+		log.SetOutput(os.Stdout)
+	default:
+		// File path
+		f, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Printf("Warning: Could not open log file %s: %v, falling back to stderr", logPath, err)
+			log.SetOutput(os.Stderr)
+		} else {
+			log.SetOutput(f)
+			log.Printf("Logging to file: %s", logPath)
+		}
+	}
 }
 
 // ── RSS Feed ──
@@ -538,13 +580,42 @@ func writeJSON(w http.ResponseWriter, status int, data interface{}) {
 // ── Main ──
 
 func main() {
-	cfg := loadConfig()
+	// Define flags
+	configPath := flag.String("config", "", "Path to server configuration file (default: ./server.json)")
+	dataPath := flag.String("data", "", "Path to data directory (default: current directory)")
+	staticPath := flag.String("static", "", "Path to static files directory (default: current directory)")
+	logPath := flag.String("log", "journald", "Log output: journald, stderr, stdout, or file path")
+	showVersion := flag.Bool("version", false, "Print version and exit")
 
-	// Get the project root (parent of server/)
-	projectRoot, err := os.Getwd()
-	if err != nil {
-		log.Fatal("Failed to get working directory:", err)
+	flag.Parse()
+
+	// Handle --version
+	if *showVersion {
+		fmt.Printf("toolbox %s\n", Version)
+		os.Exit(0)
 	}
+
+	// Load configuration
+	cfg := loadConfig(*configPath)
+
+	// Determine paths
+	var projectRoot string
+	var err error
+
+	if *staticPath != "" {
+		projectRoot = *staticPath
+	} else if *dataPath != "" {
+		projectRoot = *dataPath
+	} else {
+		// Default: current directory
+		projectRoot, err = os.Getwd()
+		if err != nil {
+			log.Fatal("Failed to get working directory:", err)
+		}
+	}
+
+	// Setup logging
+	setupLogging(*logPath)
 
 	// Create caches with different TTLs
 	// RSS feeds: 5 minutes (feeds don't change often)
@@ -560,7 +631,7 @@ func main() {
 		})
 	}
 
-	// Serve static files from project root
+	// Serve static files
 	http.Handle("/", httpLogging(http.FileServer(http.Dir(projectRoot))))
 
 	// API routes
@@ -572,7 +643,7 @@ func main() {
 	})
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
-	log.Printf("Toolbox server starting on http://localhost%s", addr)
+	log.Printf("Toolbox %s starting on http://localhost%s", Version, addr)
 	log.Printf("Static files served from: %s", projectRoot)
 	log.Printf("Cache TTLs: RSS=5min, GitHub=2min")
 

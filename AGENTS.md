@@ -6,13 +6,158 @@ A minimal, offline-capable browser start page with a hacker/terminal aesthetic. 
 
 ## Running It
 
+### Development
+
 ```bash
 go run server/main.go
 ```
 
+Or with flags:
+
+```bash
+./toolbox --config ./server.json --data . --static . --log stderr
+```
+
 Open `http://localhost:8080` in a browser.
 
+### Production
+
+```bash
+sudo ./scripts/install.sh
+```
+
+The service starts automatically. View logs with:
+
+```bash
+journalctl -u toolbox -f
+```
+
 The Go server serves static files and proxies API requests to avoid CORS issues.
+
+## Deployment
+
+### Filesystem Layout
+
+**Production installation:**
+
+```
+/etc/toolbox/              # Configuration files
+├── settings.json          # User configuration
+├── server.json            # Server configuration
+└── tools/                 # Tool plugins
+
+/opt/toolbox/              # Application files
+├── toolbox                # Binary
+├── index.html
+├── style.css
+├── app.js
+└── favicon.svg
+
+/var/log/toolbox/          # Log files (optional)
+```
+
+**Development (source tree):**
+
+```
+/path/to/ULTRABOX/
+├── settings.json
+├── server.json
+├── index.html
+├── style.css
+├── app.js
+├── tools/
+│   └── *.js
+└── server/
+    └── main.go
+```
+
+### Command-Line Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--config` | `./server.json` | Path to server configuration |
+| `--data` | `.` | Path to data directory |
+| `--static` | `.` | Path to static files |
+| `--log` | `journald` | Log output: journald, stderr, stdout, or file path |
+| `--version` | - | Print version and exit |
+
+**Examples:**
+
+```bash
+# Development
+./toolbox --config ./server.json --data . --static . --log stderr
+
+# Production (default paths)
+ toolbox
+
+# Custom paths
+./toolbox --config /etc/toolbox/server.json --data /etc/toolbox --static /opt/toolbox --log /var/log/toolbox/toolbox.log
+```
+
+### Systemd Service
+
+Installed at `/etc/systemd/system/toolbox.service`:
+
+```ini
+[Unit]
+Description=Toolbox - Browser Start Page
+After=network.target
+
+[Service]
+Type=simple
+User=toolbox
+Group=toolbox
+ExecStart=/opt/toolbox/toolbox --config /etc/toolbox/server.json --data /etc/toolbox --static /opt/toolbox
+Restart=on-failure
+RestartSec=5
+StandardOutput=journald
+StandardError=journald
+SyslogIdentifier=toolbox
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**Management:**
+
+```bash
+sudo systemctl start toolbox
+sudo systemctl stop toolbox
+sudo systemctl restart toolbox
+sudo systemctl enable toolbox  # Start on boot
+sudo systemctl disable toolbox # Stop starting on boot
+journalctl -u toolbox -f       # View logs
+```
+
+### Building
+
+```bash
+# Development build
+make build
+
+# With custom version
+make build VERSION=1.0.0
+
+# Install to system
+make install
+```
+
+### Installation Script
+
+`scripts/install.sh` handles:
+- Creating `toolbox` user
+- Installing binary to `/opt/toolbox/`
+- Copying configuration to `/etc/toolbox/`
+- Setting up systemd service
+- Starting the service
+
+```bash
+# Build first
+make build
+
+# Install (requires sudo)
+sudo ./scripts/install.sh
+```
 
 ## File Structure
 
