@@ -1,5 +1,5 @@
 // ── Hash Generator Tool ──
-// Supports: MD5, SHA-256, SHA-512 (bcrypt requires native module, not included)
+// Supports: MD5, SHA-256, SHA-512
 // Plugin API: define `renderTool(tool)` — returns HTML string.
 // Expose any action functions on `window.tools.<id>`.
 
@@ -158,10 +158,6 @@ function renderTool(tool) {
           <span class="hashgen-label">SHA-512:</span>
           <span class="hashgen-value" id="hash-sha512">—</span>
           <button class="hashgen-copy" onclick="window.tools.hashgen.copy('sha512')">Copy</button>
-        </div>
-        <div class="hashgen-row hashgen-bcrypt">
-          <span class="hashgen-label">bcrypt:</span>
-          <span class="hashgen-value" id="hash-bcrypt">Requires native module (offline-incompatible)</span>
         </div>
       </div>
     </div>
