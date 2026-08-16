@@ -175,6 +175,188 @@ The server caches API responses in-memory to prevent rate limiting from external
 - Improves response times for repeated requests
 - Simple implementation with no external dependencies
 
+## Deployment
+
+### Objectives
+
+The project should be installable on Linux systems with minimal configuration. Support both development (source) and production (package) deployments.
+
+### Filesystem Layout (FHS)
+
+**Default installation paths:**
+```
+/etc/toolbox/              # Configuration files
+├── settings.json          # User configuration
+├── server.json            # Server configuration
+└── tools/                 # Tool plugins
+    ├── codename.js
+    ├── hashgen.js
+    ├── bcrypt.js
+    └── username-gen.js
+
+/opt/toolbox/              # Application files
+├── toolbox                # Binary
+├── index.html
+├── style.css
+├── app.js
+└── favicon.svg
+
+/lib/systemd/system/       # Systemd service file
+toolbox.service
+
+/var/log/toolbox/          # Log files (optional)
+toolbox.log
+```
+
+**Development layout (source tree):**
+```
+/path/to/ULTRABOX/
+├── settings.json
+├── server.json
+├── index.html
+├── style.css
+├── app.js
+├── tools/
+│   └── *.js
+└── server/
+    └── main.go
+```
+
+### Command-Line Flags
+
+The server binary supports the following flags:
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--config` | `/etc/toolbox/server.json` | Path to server configuration file |
+| `--data` | `/etc/toolbox` | Path to data directory (settings.json, tools/) |
+| `--static` | `/opt/toolbox` | Path to static files directory |
+| `--log` | journald | Log output path ("journald", "stderr", "stdout", or file path) |
+| `--version` | - | Print version and exit |
+
+**Examples:**
+```bash
+# Production installation (default paths, logs to journald)
+toolbox
+
+# Development (source tree, logs to stderr)
+toolbox --config ./server.json --data . --static . --log stderr
+
+# Custom paths with file logging
+toolbox --config /etc/toolbox/custom.json --data /opt/my-toolbox/data --log /var/log/toolbox/toolbox.log
+```
+
+### Systemd Integration
+
+**Service file:** `/lib/systemd/system/toolbox.service`
+```ini
+[Unit]
+Description=Toolbox - Browser Start Page
+After=network.target
+
+[Service]
+Type=simple
+User=toolbox
+Group=toolbox
+ExecStart=/opt/toolbox/toolbox --config /etc/toolbox/server.json --data /etc/toolbox --static /opt/toolbox
+Restart=on-failure
+RestartSec=5
+
+# Logging to journald (default)
+StandardOutput=journald
+StandardError=journald
+SyslogIdentifier=toolbox
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**View logs:**
+```bash
+# All toolbox logs
+journalctl -u toolbox
+
+# Follow logs
+journalctl -u toolbox -f
+
+# With timestamp and full output
+journalctl -u toolbox -o verbose
+```
+
+**Setup:**
+```bash
+# Create user
+sudo useradd -r -s /usr/sbin/nologin toolbox
+
+# Install files
+sudo cp toolbox /opt/toolbox/
+sudo cp -r tools/ /opt/toolbox/
+sudo cp index.html style.css app.js /opt/toolbox/
+
+# Configure
+sudo cp settings.json /etc/toolbox/
+sudo cp server.json /etc/toolbox/
+
+# Enable service
+sudo systemctl daemon-reload
+sudo systemctl enable --now toolbox
+```
+
+### Packaging
+
+**Debian package (.deb):**
+- Provides: `toolbox`
+- Depends: systemd
+- Post-install: creates user, copies files, enables service
+- Can be built with `dpkg-buildpackage` or `fpm`
+
+**Ansible role:**
+- Role name: `toolbox`
+- Variables:
+  - `toolbox_install_dir`: `/opt/toolbox`
+  - `toolbox_config_dir`: `/etc/toolbox`
+  - `toolbox_user`: `toolbox`
+  - `toolbox_port`: `8080`
+- Tasks:
+  - Install dependencies
+  - Create user
+  - Download/build binary
+  - Copy files
+  - Configure systemd
+  - Enable service
+
+**Usage:**
+```yaml
+- hosts: all
+  roles:
+    - role: toolbox
+      toolbox_port: 8080
+```
+
+### Build Process
+
+**Development:**
+```bash
+cd server/
+go build -o ../toolbox .
+```
+
+**Production:**
+```bash
+cd server/
+go build -ldflags "-s -w" -o ../toolbox .
+# -s: omit symbol table
+# -w: omit DWARF debug info
+```
+
+**Cross-compilation:**
+```bash
+cd server/
+go build -o toolbox-linux-amd64 -ldflags "-s -w" .
+GOOS=linux GOARCH=amd64 go build -o toolbox-linux-amd64 -ldflags "-s -w" .
+GOOS=linux GOARCH=arm64 go build -o toolbox-linux-arm64 -ldflags "-s -w" .
+```
+
 ## Components
 
 ### Tool: Plugin Architecture (`#sidebar-right`)
