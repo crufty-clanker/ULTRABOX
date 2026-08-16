@@ -7,7 +7,6 @@ A minimal, offline-capable browser start page with a hacker/terminal aesthetic. 
 ## Running It
 
 ```bash
-cd /home/pi-agent/drafts/ULTRABOX
 go run server/main.go
 ```
 
@@ -26,7 +25,8 @@ ULTRABOX/
 ├── server.json         # Server configuration (port)
 ├── tools/              # Tool plugins (one .js per tool)
 │   ├── codename.js     # NSA-style codename generator
-│   └── hashgen.js      # MD5, SHA-256, SHA-512 hash generator
+│   ├── hashgen.js      # MD5, SHA-256, SHA-512 hash generator
+│   └── bcrypt.js       # bcrypt hash generator
 ├── server/             # Go server (static files + API proxy)
 │   ├── main.go
 │   ├── go.mod
@@ -160,7 +160,7 @@ window.tools.mytool = {
 - Single `<main>` with three-column layout: `#sidebar-left`, `#clock` + `#search` (center), `#sidebar-right`
 - `#sidebar-left` contains `#links` (vertical list of quick links)
 - `#sidebar-right` contains `#tools` (tool cards)
-- Inline `<script>` tags for `settings.json` loading (ESM import) and `app.js`
+- `<script type="module" src="app.js">` for app logic
 - Semantic, minimal markup — no frameworks, no template engines
 
 ### CSS (`style.css`)
@@ -176,7 +176,6 @@ window.tools.mytool = {
 ### JavaScript (`app.js`)
 - One IIFE or module — no class frameworks
 - Functions are named and grouped by feature: `initClock()`, `initSearch()`, `initLinks()`, `initTools()`
-- `loadSettings()` reads the inline JSON blob injected by `index.html`
 - All DOM manipulation happens after `DOMContentLoaded`
 - `initTools()` loads tool plugins dynamically from URLs in settings.json
 - Each tool plugin defines `renderTool(tool)` and optionally exposes actions on `window.tools.<id>`
