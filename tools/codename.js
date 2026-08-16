@@ -55,8 +55,7 @@ function renderTool(tool) {
       <div class="tool-title">${tool.name}</div>
       <div class="tool-description">${tool.description}</div>
       <button class="tool-action" onclick="window.tools.codename.generate()">Generate</button>
-      <div class="tool-result" id="codename-result"></div>
-      <button class="tool-action copy-btn" onclick="window.tools.codename.copy()" style="display:none; margin-top:0.5rem;">Copy</button>
+      <div class="tool-result" id="codename-result" onclick="window.tools.codename.copy()" style="cursor: pointer;" title="Click to copy"></div>
     </div>
   `;
 }
@@ -66,13 +65,11 @@ window.tools.codename = {
   generate() {
     const adj = CODENAME_ADJECTIVES[Math.floor(Math.random() * CODENAME_ADJECTIVES.length)];
     const noun = CODENAME_NOUNS[Math.floor(Math.random() * CODENAME_NOUNS.length)];
-    const codename = `${adj}${noun}`;
+    const codename = `${adj} ${noun}`;
     const result = document.getElementById("codename-result");
-    const copyBtn = document.querySelector(".copy-btn");
-    if (result) result.textContent = codename;
-    if (copyBtn) {
-      copyBtn.style.display = "block";
-      copyBtn.textContent = "Copy";
+    if (result) {
+      result.textContent = codename;
+      result.title = "Click to copy";
     }
     window._currentCodename = codename;
   },
@@ -82,10 +79,11 @@ window.tools.codename = {
     if (!codename) return;
     try {
       await navigator.clipboard.writeText(codename);
-      const copyBtn = document.querySelector(".copy-btn");
-      if (copyBtn) {
-        copyBtn.textContent = "Copied!";
-        setTimeout(() => { copyBtn.textContent = "Copy"; }, 2000);
+      const result = document.getElementById("codename-result");
+      if (result) {
+        const originalText = result.textContent;
+        result.textContent = "Copied!";
+        setTimeout(() => { result.textContent = originalText; }, 2000);
       }
     } catch (err) {
       console.error("Failed to copy:", err);

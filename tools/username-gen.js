@@ -23,8 +23,7 @@ function renderTool(tool) {
       <div class="tool-title">${tool.name}</div>
       <div class="tool-description">${tool.description}</div>
       <button class="tool-action" onclick="window.tools.usernamegen.generate()">Generate</button>
-      <div class="tool-result" id="usernamegen-result"></div>
-      <button class="tool-action copy-btn" onclick="window.tools.usernamegen.copy()" style="display:none; margin-top:0.5rem;">Copy</button>
+      <div class="tool-result" id="usernamegen-result" onclick="window.tools.usernamegen.copy()" style="cursor: pointer;" title="Click to copy"></div>
     </div>
   `;
 }
@@ -40,11 +39,9 @@ window.tools.usernamegen = {
     const username = `${adj.toLowerCase()}${sep}${noun.toLowerCase()}${num}`;
     
     const result = document.getElementById("usernamegen-result");
-    const copyBtn = document.querySelector(".copy-btn");
-    if (result) result.textContent = username;
-    if (copyBtn) {
-      copyBtn.style.display = "block";
-      copyBtn.textContent = "Copy";
+    if (result) {
+      result.textContent = username;
+      result.title = "Click to copy";
     }
     window._currentUsername = username;
   },
@@ -54,10 +51,11 @@ window.tools.usernamegen = {
     if (!username) return;
     try {
       await navigator.clipboard.writeText(username);
-      const copyBtn = document.querySelector(".copy-btn");
-      if (copyBtn) {
-        copyBtn.textContent = "Copied!";
-        setTimeout(() => { copyBtn.textContent = "Copy"; }, 2000);
+      const result = document.getElementById("usernamegen-result");
+      if (result) {
+        const originalText = result.textContent;
+        result.textContent = "Copied!";
+        setTimeout(() => { result.textContent = originalText; }, 2000);
       }
     } catch (err) {
       console.error("Failed to copy:", err);
