@@ -168,32 +168,6 @@ sudo systemctl disable toolbox
 
 ## Troubleshooting
 
-### Service won't start
-
-```bash
-# Check logs
-journalctl -u toolbox -n 50
-
-# Check if port is in use
-sudo lsof -i :8080
-
-# Check file permissions
-ls -la /opt/toolbox/
-ls -la /etc/toolbox/
-```
-
-### CORS errors
-
-The server proxies API requests to avoid CORS issues. If you see CORS errors:
-- Ensure you're accessing via the server (http://localhost:8080)
-- Don't open `index.html` directly from the filesystem
-
-### RSS feeds not loading
-
-- Check network connectivity
-- Verify feed URLs in `settings.json`
-- Check server logs: `journalctl -u toolbox -n 50`
-
 ### GitHub API rate limiting
 
 - The server caches GitHub responses (2 minutes)
