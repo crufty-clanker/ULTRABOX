@@ -2,7 +2,7 @@
 
 ## Vision
 
-A minimal, offline-capable browser start page with a hacker/terminal aesthetic. Single user. Plain HTML + CSS + JS. No build step. No dependencies.
+A minimal, offline-capable browser start page with a hacker/terminal aesthetic. Single user. Plain HTML + CSS + JS. No build step. No dependencies (client-side).
 
 ## Aesthetic Direction
 
@@ -39,24 +39,118 @@ A minimal, offline-capable browser start page with a hacker/terminal aesthetic. 
 ## Architecture
 
 ```
-┌───────────────────────────────────────────────────────┐
-│                    index.html                         │
-│  ┌────────┐  ┌──────────────────────┐  ┌──────────┐  │
-│  │  Links │  │                      │  │  Tools   │  │
-│  │Sidebar │  │   Clock + Search     │  │ Sidebar  │  │
-│  │  (L)   │  │                      │  │   (R)    │  │
-│  └────────┘  └──────────────────────┘  └──────────┘  │
-│                                                       │
-│  ┌─────────────────────────────────────────────────┐  │
-│  │         app.js (logic + plugin loader)           │  │
-│  │              style.css (looks)                   │  │
-│  │         settings.json (fetched)                  │  │
-│  │         tools/*.js (loaded dynamically)          │  │
-│  └─────────────────────────────────────────────────┘  │
-└───────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                    Browser (Client)                      │
+│  ┌────────┐  ┌──────────────────────┐  ┌──────────┐    │
+│  │  Links │  │                      │  │  Tools   │    │
+│  │Sidebar │  │   Clock + Search     │  │ Sidebar  │    │
+│  │  (L)   │  │                      │  │   (R)    │    │
+│  └────────┘  └──────────────────────┘  └──────────┘    │
+│                                                         │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │    app.js (logic + plugin loader + feeds/PRs)     │  │
+│  │    style.css (looks)                              │  │
+│  │    settings.json (fetched)                        │  │
+│  │    tools/*.js (loaded dynamically)                │  │
+│  └───────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────┐
+│              Go Server (server/)                        │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │  Static file server (port 8080)                   │  │
+│  │  / → serves index.html, style.css, app.js, etc.   │  │
+│  │                                                   │  │
+│  │  /api/github/* → proxies to GitHub API            │  │
+│  │    - Avoids CORS issues                           │  │
+│  │    - Adds auth token if configured                │  │
+│  │                                                   │  │
+│  │  /api/rss/* → proxies RSS/Atom feeds              │  │
+│  │    - Avoids CORS issues                           │  │
+│  │    - Parses and returns JSON                      │  │
+│  └───────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
 ```
 
-Three-column layout: left sidebar (links), center (clock + search), right sidebar (tools). All logic in `app.js`. All styles in `style.css`. Settings in `settings.json` (injected as inline JSON into the HTML). Tools are loaded as independent `.js` plugins from the `tools/` directory.
+```
+ULTRABOX/
+├── index.html
+├── style.css
+├── app.js
+├── settings.json
+├── server.json         # Server configuration (port)
+├── tools/
+│   ├── codename.js     # NSA-style codename generator
+│   ├── hashgen.js      # MD5, SHA-256, SHA-512 hash generator
+│   └── bcrypt.js       # bcrypt hash generator
+├── server/
+│   ├── main.go         # Go server entry point
+│   ├── go.mod          # Go module definition
+│   └── README.md       # Server documentation
+├── AGENTS.md
+└── DESIGN.md
+```
+
+Three-column layout: left sidebar (links), center (clock + search + feeds/PRs), right sidebar (tools). Client-side logic in `app.js`, styles in `style.css`, settings in `settings.json`. Tools loaded as independent `.js` plugins from `tools/`. Server in `server/` handles static file serving and API proxying.
+
+## Server Component (`server/`)
+
+**What:** A minimal Go HTTP server that serves static files and proxies external API requests.
+
+**Why:**
+- Avoids CORS issues when fetching GitHub API or RSS feeds from the browser
+- Provides a single entry point for the application
+- Enables future features (auth, caching, rate limiting)
+
+**Spec:**
+- Written in Go (no dependencies beyond stdlib)
+- Reads configuration from `server.json` at project root
+- Serves static files from project root
+- Proxies `/api/github/*` requests to GitHub API
+- Proxies `/api/rss/*` requests to RSS feed URLs (returns JSON)
+- Single binary, no build step for the client
+- Runs via `go run server/main.go` or compiled binary
+
+### Configuration (`server.json`)
+
+```json
+{
+  "port": 8080
+}
+```
+
+| Field | Type | Default | Notes |
+|-------|------|---------|-------|
+| `port` | int | `8080` | Port to listen on |
+
+If `server.json` is missing or invalid, defaults to port 8080.
+
+### Running the Server
+
+```bash
+cd /path/to/ULTRABOX
+go run server/main.go
+# Open http://localhost:8080
+```
+
+### API Endpoints
+
+#### `GET /api/github/repos/{org}`
+Proxies to GitHub API for org repos.
+
+#### `GET /api/github/pulls?org={org}&user={user}`
+Fetches open PRs for orgs and users.
+
+#### `GET /api/rss?url={encoded_url}`
+Fetches and parses RSS/Atom XML, returns JSON:
+```json
+{
+  "title": "Feed Title",
+  "items": [
+    { "title": "Item Title", "link": "https://...", "published": "2024-01-01T00:00:00Z" }
+  ]
+}
+```
 
 ## Components
 
@@ -138,6 +232,32 @@ Generates NSA-style two-part code names (e.g., "IRON HAWK", "SILVER STORM").
 - Adjectives: IRON, SILVER, DARK, BLUE, STEEL, SHADOW, STEALTH, CRIMSON, FROST, GHOST, etc.
 - Nouns: HAWK, STORM, VIPER, THUNDER, REAPER, FALCON, WOLF, PHANTOM, DRAGON, etc.
 
+**Example: Hash Generator** (`tools/hashgen.js`)
+
+Generates MD5, SHA-256, and SHA-512 hashes for any input string.
+
+- Textarea input for the string to hash
+- "Hash" button triggers all three algorithms
+- SHA-256/SHA-512 use the Web Crypto API (native, no deps)
+- MD5 uses a compact pure JS implementation (~3KB embedded)
+- Each hash has a copy button
+- Example outputs (for "hello"):
+  - MD5: `5d41402abc4b2a76b9719d911017c592`
+  - SHA-256: `2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824`
+  - SHA-512: `9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2dff72519673ca72...`
+
+**Example: Bcrypt Hash Generator** (`tools/bcrypt.js`)
+
+Generates a bcrypt hash for any input string using a pure-JS bcrypt implementation.
+
+- Textarea input for the string to hash
+- "Hash" button triggers bcrypt hashing
+- Uses a pure-JS bcrypt implementation (no native/WASM module needed)
+- Includes a configurable cost factor (default: 10)
+- Copy button for the resulting hash
+- Example output (for "hello", cost 10):
+  - `$2b$10$<60-char bcrypt hash>`
+
 ### 1. Clock (`#clock`)
 
 **What:** Current time in the user's local timezone.
@@ -175,6 +295,33 @@ Generates NSA-style two-part code names (e.g., "IRON HAWK", "SILVER STORM").
 - **Offline:** Always works (static data from `settings.json`)
 - Sidebar is fixed-width (~200px), scrollable if links overflow
 
+### 4. Center — RSS Feeds (`#feeds`)
+
+**What:** RSS/Atom feeds from `settings.json` → `feeds[]`, displayed in the center-left below the search bar.
+
+**Spec:**
+- Renders one feed block per `feeds` array item
+- Each feed: `{ name, url, icon? }` — `icon` is optional
+- Fetches via Go server proxy (`/api/rss?url=...`) to avoid CORS
+- Parses RSS/Atom XML server-side, returns JSON
+- Displays up to 10 items per feed
+- Each item: title (link), relative time (e.g., "2h ago")
+- **Online required:** Fetches external RSS feeds
+- Falls back silently on failure (no errors shown)
+
+### 5. Center — GitHub PRs (`#prs`)
+
+**What:** Open pull requests from `settings.json` → `github.{orgs, users}`, displayed in the center-right below the search bar.
+
+**Spec:**
+- Config: `{ orgs: ["myorg"], users: ["myuser"] }`
+- Fetches via Go server proxy (`/api/github/pulls?...`) to avoid CORS
+- Displays up to 20 PRs sorted by creation date (newest first)
+- Each PR: title (link), PR number, author, relative time
+- **Online required:** Fetches from GitHub API
+- Rate limited: 60 requests/hour without auth (1000 with auth)
+- Falls back silently on failure (no errors shown)
+
 ## Settings (`settings.json`)
 
 **What:** All user configuration, loaded once at page load.
@@ -201,12 +348,31 @@ Generates NSA-style two-part code names (e.g., "IRON HAWK", "SILVER STORM").
   "links": [
     { "name": "GitHub", "url": "https://github.com", "icon": "⌘" }
   ],
+  "feeds": [
+    { "name": "Hacker News", "url": "https://hnrss.org/frontpage", "icon": "🔥" }
+  ],
+  "github": {
+    "orgs": [],
+    "users": []
+  },
   "tools": [
     {
       "id": "codename",
       "name": "Codename Generator",
       "description": "Generate NSA-style code names",
       "url": "tools/codename.js"
+    },
+    {
+      "id": "hashgen",
+      "name": "Hash Generator",
+      "description": "MD5, SHA-256, SHA-512 for any input string",
+      "url": "tools/hashgen.js"
+    },
+    {
+      "id": "bcrypt",
+      "name": "Bcrypt Hash Generator",
+      "description": "Generate bcrypt hashes for passwords",
+      "url": "tools/bcrypt.js"
     }
   ]
 }
@@ -218,6 +384,8 @@ Generates NSA-style two-part code names (e.g., "IRON HAWK", "SILVER STORM").
 | `search.url` | string | `https://duckduckgo.com/?q=%s` | `%s` is replaced with the query |
 | `search.placeholder` | string | `"search..."` | Placeholder text in the search bar |
 | `links` | array of `{name, url, icon}` | `[]` | Quick link shortcuts. `icon` is optional. Renders in left sidebar. |
+| `feeds` | array of `{name, url, icon?}` | `[]` | RSS/Atom feeds displayed in center-left below search. |
+| `github` | `{orgs: string[], users: string[]}` | `{orgs: [], users: []}` | GitHub orgs/users to fetch open PRs for. Displayed in center-right below search. |
 | `tools` | array of `{id, name, description, url}` | `[]` | Tool plugins rendered in right sidebar. Each `url` points to a `.js` file in `tools/`. |
 
 ## Data Flow
@@ -236,6 +404,17 @@ app.js
 │  initTools() → loads tool plugins → right sidebar    │
 │    loadToolScript(url) → <script> tag injection       │
 │    renderTool(tool) → HTML string from plugin        │
+│  initFeedsAndPRs() → center-bottom panels            │
+│    loadFeeds() → fetch /api/rss?url=... → parse → render│
+│    loadPRs() → fetch /api/github/pulls → sort → render│
+└─────────────────────────────────────────────────────┘
+    ↓ (HTTP requests)
+Go Server (server/main.go)
+    ↓
+┌─────────────────────────────────────────────────────┐
+│  Static files (index.html, style.css, etc.)          │
+│  /api/github/* → proxies to GitHub API               │
+│  /api/rss/* → fetches RSS/Atom XML → returns JSON    │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -248,27 +427,35 @@ The page should **never show an error message**. When external services are unav
 | Clock | Always works (no network needed) |
 | Search | Always works (no network needed) |
 | Links | Always works (static data from settings.json) |
+| Tools | Always works (static data from settings.json + local JS) |
+| Feeds | Silently skips on failure (no errors shown) |
+| PRs | Silently skips on failure (no errors shown) |
 
 Implementation: wrap all `fetch()` calls in try/catch. On failure, skip rendering that section or render an empty state. Never throw, never alert.
 
 ## Layout
 
 ```
-┌──────────┬──────────────────────────────────┬──────────┐
-│  Links   │                                  │  Tools   │
-│ Sidebar  │      HH:MM                       │ Sidebar  │
-│          │       Asia/Seoul                 │          │
-│ ⌘ GitHub │                                  │ 🎲 Codename│
-│ ◆ GitLab │  ┌──────────────────────────┐    │  [Generate]│
-│ ▦ Docker │  │ $ search...               │    │            │
-│ ⬡ Proxmox│  └──────────────────────────┘    │            │
-│ ☰ Notes  │                                  │            │
-└──────────┴──────────────────────────────────┴──────────┘
+┌──────────┬──────────────────────────────────────────────┬──────────┐
+│  Links   │                                              │  Tools   │
+│ Sidebar  │          HH:MM                               │ Sidebar  │
+│          │           Asia/Seoul                         │          │
+│ ⌘ GitHub │                                              │ 🎲 Codename│
+│ ◆ GitLab │  ┌──────────────────────────────────────┐   │  [Generate]│
+│ ▦ Docker │  │ $ search...                          │   │            │
+│ ⬡ Proxmox│  └──────────────────────────────────────┘   │            │
+│ ☰ Notes  │  ┌──────────────────┐  ┌────────────────┐   │            │
+│          │  │ RSS FEEDS        │  │ PULL REQUESTS  │   │            │
+│          │  │ • Item 1         │  │ PR #123 - Title│   │            │
+│          │  │ • Item 2         │  │ #456 by author │   │            │
+│          │  │ • Item 3         │  │ PR #789 - Title│   │            │
+│          │  └──────────────────┘  └────────────────┘   │            │
+└──────────┴──────────────────────────────────────────────┴──────────┘
 ```
 
 - Full-screen width layout: left sidebar (~200px), center (flex), right sidebar (~250px)
 - Left sidebar: vertical list of links, scrollable
-- Center: clock + search, vertically and horizontally centered
+- Center: clock + search + feeds/PRs, vertically and horizontally centered
 - Right sidebar: tool cards, each with a title, description, and interactive area
 - Sidebar labels ("LINKS", "TOOLS") as small uppercase headers
 
@@ -280,8 +467,9 @@ Implementation: wrap all `fetch()` calls in try/catch. On failure, skip renderin
 
 ## Performance
 
-- Zero external dependencies
+- Zero external dependencies (client-side)
 - No images (all icons are Unicode or inline SVG)
 - No analytics, no tracking
-- Page weight target: < 30KB total
+- Page weight target: < 30KB total (excluding Go server)
 - First contentful paint: < 200ms on local server
+- Go server: single binary, no dependencies beyond stdlib

@@ -8,10 +8,12 @@ A minimal, offline-capable browser start page with a hacker/terminal aesthetic. 
 
 ```bash
 cd /home/pi-agent/drafts/ULTRABOX
-python3 -m http.server 8080
+go run server/main.go
 ```
 
 Open `http://localhost:8080` in a browser.
+
+The Go server serves static files and proxies API requests to avoid CORS issues.
 
 ## File Structure
 
@@ -19,12 +21,18 @@ Open `http://localhost:8080` in a browser.
 ULTRABOX/
 ├── index.html          # Single page entry point
 ├── style.css           # All styles (terminal theme, hex bg)
-├── app.js              # Core app logic + plugin loader
+├── app.js              # Core app logic + plugin loader + feeds/PRs
 ├── settings.json       # User configuration (edit manually, reload page)
+├── server.json         # Server configuration (port)
 ├── tools/              # Tool plugins (one .js per tool)
-│   └── codename.js     # Example tool plugin
+│   ├── codename.js     # NSA-style codename generator
+│   └── hashgen.js      # MD5, SHA-256, SHA-512 hash generator
+├── server/             # Go server (static files + API proxy)
+│   ├── main.go
+│   ├── go.mod
+│   └── README.md
 ├── AGENTS.md     # ← you are here
-└── favicon.svg         # Terminal-style favicon
+└── DESIGN.md
 ```
 
 ## Config Schema — `settings.json`
@@ -64,6 +72,24 @@ All config lives in one file. **No in-browser editor.** Edit the file, refresh t
 | `search.placeholder` | string | `"search..."` | Placeholder text in the search bar |
 | `links` | array of `{name, url, icon}` | `[]` | Quick link shortcuts. `icon` is optional. Renders in left sidebar. |
 | `tools` | array of `{id, name, description, url}` | `[]` | Tool plugins rendered in right sidebar. Each `url` points to a `.js` file in `tools/`. |
+| `feeds` | array of `{name, url, icon?}` | `[]` | RSS/Atom feeds displayed in center-left below search. |
+| `github` | `{orgs: string[], users: string[]}` | `{orgs: [], users: []}` | GitHub orgs/users to fetch open PRs for. Displayed in center-right below search. |
+
+## Server Configuration — `server.json`
+
+Server settings, loaded at startup.
+
+```json
+{
+  "port": 8080
+}
+```
+
+| Field | Type | Default | Notes |
+|-------|------|---------|-------|
+| `port` | int | `8080` | Port to listen on |
+
+If `server.json` is missing or invalid, defaults to port 8080.
 
 ### Tool: Plugin Architecture
 

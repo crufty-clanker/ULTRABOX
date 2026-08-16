@@ -13,12 +13,33 @@
     { "name": "Proxmox", "url": "https://your-proxmox:8006", "icon": "⬡" },
     { "name": "Notes", "url": "https://notes.example.com", "icon": "☰" }
   ],
+  "feeds": [
+    {
+      "name": "Hacker News",
+      "url": "https://hnrss.org/frontpage",
+      "icon": "🔥"
+    },
+    {
+      "name": "Reddit r/programming",
+      "url": "https://www.reddit.com/r/programming/.rss"
+    }
+  ],
+  "github": {
+    "orgs": [],
+    "users": []
+  },
   "tools": [
     {
       "id": "codename",
       "name": "Codename Generator",
       "description": "Generate NSA-style code names",
       "url": "tools/codename.js"
+    },
+    {
+      "id": "hashgen",
+      "name": "Hash Generator",
+      "description": "MD5, SHA-256, SHA-512 for any input string",
+      "url": "tools/hashgen.js"
     }
   ]
 }
