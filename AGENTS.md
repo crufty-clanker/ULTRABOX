@@ -79,7 +79,10 @@ The Go server serves static files and proxies API requests to avoid CORS issues.
 | `--data` | `.` | Path to data directory |
 | `--static` | `.` | Path to static files |
 | `--log` | `journald` | Log output: journald, stderr, stdout, or file path |
+| `--listen` | `:8080` | Listen address (e.g., `:8080`, `127.0.0.1:8080`, `0.0.0.0:8081`) |
 | `--version` | - | Print version and exit |
+
+**Note:** `--listen` combines both port and interface. No separate port setting needed.
 
 **Examples:**
 
@@ -88,10 +91,13 @@ The Go server serves static files and proxies API requests to avoid CORS issues.
 ./toolbox --config ./server.json --data . --static . --log stderr
 
 # Production (default paths)
- toolbox
+toolbox
 
-# Custom paths
-./toolbox --config /etc/toolbox/server.json --data /etc/toolbox --static /opt/toolbox --log /var/log/toolbox/toolbox.log
+# Localhost only
+toolbox --listen 127.0.0.1:8080
+
+# Custom paths and listen address
+./toolbox --config /etc/toolbox/server.json --data /etc/toolbox --static /opt/toolbox --listen 0.0.0.0:8081
 ```
 
 ### Systemd Service
@@ -117,6 +123,8 @@ SyslogIdentifier=toolbox
 [Install]
 WantedBy=multi-user.target
 ```
+
+**Note:** Set `listen` in `server.json` to `127.0.0.1:8080` for security. Change to `0.0.0.0:8080` if you need LAN access, or use a reverse proxy.
 
 **Management:**
 
@@ -226,13 +234,13 @@ Server settings, loaded at startup.
 
 ```json
 {
-  "port": 8080
+  "listen": ":8080"
 }
 ```
 
 | Field | Type | Default | Notes |
 |-------|------|---------|-------|
-| `port` | int | `8080` | Port to listen on |
+| `listen` | string | `:8080` | Listen address (e.g., `:8080`, `127.0.0.1:8080`, `0.0.0.0:8081`) |
 
 If `server.json` is missing or invalid, defaults to port 8080.
 

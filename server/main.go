@@ -22,7 +22,7 @@ var Version = "dev"
 // ── Config ──
 
 type serverConfig struct {
-	Port int `json:"port"`
+	Listen string `json:"listen"`
 }
 
 // ── Cache ──
@@ -69,7 +69,7 @@ func (c *cache) clear() {
 }
 
 func loadConfig(configPath string) serverConfig {
-	cfg := serverConfig{Port: 8080}
+	cfg := serverConfig{Listen: ":8080"}
 
 	// Use provided path or default
 	if configPath == "" {
@@ -84,11 +84,11 @@ func loadConfig(configPath string) serverConfig {
 
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		log.Printf("Warning: Could not parse config file %s: %v", configPath, err)
-		return serverConfig{Port: 8080}
+		return serverConfig{Listen: ":8080"}
 	}
 
-	if cfg.Port == 0 {
-		cfg.Port = 8080
+	if cfg.Listen == "" {
+		cfg.Listen = ":8080"
 	}
 
 	return cfg
@@ -588,6 +588,7 @@ func main() {
 	dataPath := flag.String("data", "", "Path to data directory (default: current directory)")
 	staticPath := flag.String("static", "", "Path to static files directory (default: current directory)")
 	logPath := flag.String("log", "journald", "Log output: journald, stderr, stdout, or file path")
+	listenAddr := flag.String("listen", ":8080", "Address to listen on (e.g., :8080, 127.0.0.1:8080, 0.0.0.0:8080)")
 	showVersion := flag.Bool("version", false, "Print version and exit")
 
 	flag.Parse()
@@ -645,8 +646,13 @@ func main() {
 		handleGitHub(w, r, githubCache)
 	})
 
-	addr := fmt.Sprintf(":%d", cfg.Port)
-	log.Printf("Toolbox %s starting on http://localhost%s", Version, addr)
+	// Determine listen address: CLI flag > config file > default
+	addr := *listenAddr
+	if *listenAddr == ":8080" && cfg.Listen != "" {
+		addr = cfg.Listen
+	}
+	
+	log.Printf("Toolbox %s starting on %s", Version, addr)
 	log.Printf("Static files served from: %s", projectRoot)
 	log.Printf("Cache TTLs: RSS=5min, GitHub=2min")
 
