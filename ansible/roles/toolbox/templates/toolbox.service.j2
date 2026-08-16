@@ -1,0 +1,27 @@
+[Unit]
+Description=Toolbox - Browser Start Page
+Documentation=https://github.com/{{ github_repo }}
+After=network.target
+
+[Service]
+Type=simple
+User={{ toolbox_user }}
+Group={{ toolbox_group }}
+ExecStart={{ toolbox_install_dir }}/toolbox --config {{ toolbox_config_file }} --data {{ toolbox_config_dir }} --static {{ toolbox_install_dir }} --log {{ toolbox_log_output }}
+Restart=on-failure
+RestartSec=5
+
+# Logging
+StandardOutput={{ toolbox_log_output }}
+StandardError={{ toolbox_log_output }}
+SyslogIdentifier=toolbox
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths={{ toolbox_config_dir }} {{ toolbox_log_dir }} {{ toolbox_install_dir }}
+
+[Install]
+WantedBy=multi-user.target

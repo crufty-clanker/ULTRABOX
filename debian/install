@@ -1,0 +1,6 @@
+opt/toolbox/toolbox usr/local/bin
+opt/toolbox/index.html opt/toolbox
+opt/toolbox/style.css opt/toolbox
+opt/toolbox/app.js opt/toolbox
+opt/toolbox/favicon.svg opt/toolbox
+opt/toolbox/tools tools

@@ -1,0 +1,41 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    configure)
+        if [ -z "${DPKG_ROOT}" ]; then
+            # Create user if it doesn't exist
+            if ! getent passwd toolbox > /dev/null 2>&1; then
+                adduser --system --group --home /opt/toolbox --shell /usr/sbin/nologin toolbox
+            fi
+
+            # Create configuration directory
+            mkdir -p /etc/toolbox
+            chown toolbox:toolbox /etc/toolbox
+
+            # Create log directory
+            mkdir -p /var/log/toolbox
+            chown toolbox:toolbox /var/log/toolbox
+
+            # Set ownership
+            chown -R toolbox:toolbox /opt/toolbox
+
+            # Enable and start service
+            systemctl daemon-reload
+            systemctl enable toolbox.service
+            systemctl start toolbox.service
+        fi
+        ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+
+    *)
+        echo "postinst called with unknown argument: $1" >&2
+        exit 1
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0

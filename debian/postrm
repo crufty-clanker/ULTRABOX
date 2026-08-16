@@ -1,0 +1,28 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    purge|remove)
+        if [ -z "${DPKG_ROOT}" ]; then
+            # Stop and disable service
+            systemctl stop toolbox.service || true
+            systemctl disable toolbox.service || true
+
+            # Remove service file
+            rm -f /etc/systemd/system/toolbox.service
+            systemctl daemon-reload
+        fi
+        ;;
+
+    upgrade|failed-upgrade|abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+
+    *)
+        echo "postrm called with unknown argument: $1" >&2
+        exit 1
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0

@@ -1,0 +1,22 @@
+#!/usr/bin/make -f
+
+export GOFLAGS=-mod=readonly
+export CGO_ENABLED=0
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	cd server && go build -ldflags "-s -w -X main.Version=$(shell dpkg-parsechangelog --show-field Version)" -o ../debian/toolbox/bin/toolbox .
+
+override_dh_auto_install:
+	install -D -m 755 debian/toolbox/bin/toolbox debian/toolbox/opt/toolbox/toolbox
+	install -D -m 644 index.html debian/toolbox/opt/toolbox/index.html
+	install -D -m 644 style.css debian/toolbox/opt/toolbox/style.css
+	install -D -m 644 app.js debian/toolbox/opt/toolbox/app.js
+	install -D -m 644 favicon.svg debian/toolbox/opt/toolbox/favicon.svg
+	install -d -m 755 debian/toolbox/opt/toolbox/tools
+	cp -a tools/*.js debian/toolbox/opt/toolbox/tools/
+
+override_dh_auto_clean:
+	cd server && go clean

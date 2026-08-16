@@ -1,0 +1,10 @@
+toolbox (1.0.0-1) unstable; urgency=medium
+
+  * Initial release
+  * Browser start page with terminal aesthetic
+  * Clock, search, links, feeds, GitHub PRs
+  * Plugin system for custom tools
+  * API proxy with caching
+  * Systemd service integration
+
+ -- Toolbox Team <team@toolbox.example.com>  Sun, 16 Aug 2026 12:00:00 +0000

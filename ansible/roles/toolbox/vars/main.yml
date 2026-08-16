@@ -1,0 +1,34 @@
+---
+# Default variables for toolbox role
+
+# Installation directories
+toolbox_install_dir: /opt/toolbox
+toolbox_config_dir: /etc/toolbox
+toolbox_log_dir: /var/log/toolbox
+
+# Service user
+toolbox_user: toolbox
+toolbox_group: toolbox
+
+# Server configuration
+toolbox_port: 8080
+toolbox_config_file: "{{ toolbox_config_dir }}/server.json"
+toolbox_settings_file: "{{ toolbox_config_dir }}/settings.json"
+
+# Binary
+toolbox_version: "1.0.0"
+toolbox_binary_url: "https://github.com/{{ github_repo }}/releases/download/v{{ toolbox_version }}/toolbox-linux-amd64"
+toolbox_build_from_source: false
+toolbox_source_path: "/opt/toolbox-src"
+
+# Systemd
+toolbox_service_name: toolbox
+toolbox_service_enabled: true
+toolbox_service_state: started
+
+# Logging
+toolbox_log_level: info
+toolbox_log_output: journald  # journald, stderr, file
+
+# GitHub repository (for downloading releases)
+github_repo: "user/toolbox"

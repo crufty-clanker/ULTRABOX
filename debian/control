@@ -1,0 +1,28 @@
+Source: toolbox
+Section: web
+Priority: optional
+Maintainer: Toolbox Team <team@toolbox.example.com>
+Build-Depends: debhelper (>= 13), golang-go
+Standards-Version: 4.6.0
+Rules-Requires-Root: no
+
+Package: toolbox
+Architecture: amd64 arm64
+Depends: systemd
+Homepage: https://github.com/user/toolbox
+Description: Browser start page with terminal aesthetic
+ Toolbox is a minimal, offline-capable browser start page with a
+ hacker/terminal aesthetic. It features a clock, search bar, quick
+ links, RSS feeds, GitHub PR tracking, and a plugin system for
+ custom tools.
+ .
+ Features:
+  * Terminal green on black theme
+  * Clock with timezone display
+  * Configurable search engine
+  * Quick links sidebar
+  * RSS/Atom feed display
+  * GitHub pull request tracking
+  * Plugin system for custom tools
+  * API proxy to avoid CORS issues
+  * In-memory caching

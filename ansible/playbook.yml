@@ -1,0 +1,17 @@
+---
+# Example Ansible playbook for Toolbox
+
+- name: Install Toolbox
+  hosts: all
+  become: true
+  
+  vars:
+    toolbox_port: 8080
+    toolbox_version: "1.0.0"
+    # Set to true to build from source
+    toolbox_build_from_source: false
+    # Binary URL for release
+    toolbox_binary_url: "https://github.com/user/toolbox/releases/download/v{{ toolbox_version }}/toolbox-linux-amd64"
+  
+  roles:
+    - role: toolbox

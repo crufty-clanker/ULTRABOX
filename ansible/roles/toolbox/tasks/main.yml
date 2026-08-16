@@ -1,0 +1,186 @@
+---
+# Main tasks for toolbox installation
+
+- name: Include OS-specific variables
+  include_vars: "{{ ansible_os_family | lower }}.yml"
+  ignore_errors: true
+
+- name: Create toolbox group
+  group:
+    name: "{{ toolbox_group }}"
+    state: present
+  when: toolbox_user != "root"
+
+- name: Create toolbox user
+  user:
+    name: "{{ toolbox_user }}"
+    group: "{{ toolbox_group }}"
+    home: "{{ toolbox_install_dir }}"
+    shell: /usr/sbin/nologin
+    system: true
+    createhome: false
+    state: present
+  when: toolbox_user != "root"
+
+- name: Create installation directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ toolbox_user }}"
+    group: "{{ toolbox_group }}"
+    mode: "0755"
+  loop:
+    - "{{ toolbox_install_dir }}"
+    - "{{ toolbox_config_dir }}"
+    - "{{ toolbox_log_dir }}"
+  when: toolbox_user != "root"
+
+- name: Create installation directories (root)
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ toolbox_install_dir }}"
+    - "{{ toolbox_config_dir }}"
+    - "{{ toolbox_log_dir }}"
+  when: toolbox_user == "root"
+
+- name: Build from source
+  block:
+    - name: Install Go
+      apt:
+        name: golang-go
+        state: present
+        update_cache: true
+
+    - name: Clone source repository
+      git:
+        repo: "https://github.com/{{ github_repo }}.git"
+        dest: "{{ toolbox_source_path }}"
+        version: "v{{ toolbox_version }}"
+      when: toolbox_source_path is defined
+
+    - name: Build binary
+      shell: |
+        cd {{ toolbox_source_path }}/server
+        go build -ldflags "-s -w -X main.Version={{ toolbox_version }}" -o {{ toolbox_install_dir }}/toolbox .
+      args:
+        creates: "{{ toolbox_install_dir }}/toolbox"
+  when: toolbox_build_from_source | bool
+
+- name: Download binary
+  get_url:
+    url: "{{ toolbox_binary_url }}"
+    dest: "{{ toolbox_install_dir }}/toolbox"
+    mode: "0755"
+  when: not (toolbox_build_from_source | bool)
+
+- name: Copy application files
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ toolbox_install_dir }}/{{ item.dest }}"
+    owner: "{{ toolbox_user }}"
+    group: "{{ toolbox_group }}"
+    mode: "0644"
+  loop:
+    - { src: "../index.html", dest: "index.html" }
+    - { src: "../style.css", dest: "style.css" }
+    - { src: "../app.js", dest: "app.js" }
+    - { src: "../favicon.svg", dest: "favicon.svg" }
+  when: toolbox_user != "root"
+
+- name: Copy application files (root)
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ toolbox_install_dir }}/{{ item.dest }}"
+    mode: "0644"
+  loop:
+    - { src: "../index.html", dest: "index.html" }
+    - { src: "../style.css", dest: "style.css" }
+    - { src: "../app.js", dest: "app.js" }
+    - { src: "../favicon.svg", dest: "favicon.svg" }
+  when: toolbox_user == "root"
+
+- name: Copy tools directory
+  copy:
+    src: "../tools/"
+    dest: "{{ toolbox_install_dir }}/tools/"
+    owner: "{{ toolbox_user }}"
+    group: "{{ toolbox_group }}"
+    mode: "0644"
+    remote_src: true
+  when: toolbox_user != "root"
+
+- name: Create server configuration
+  template:
+    src: server.json.j2
+    dest: "{{ toolbox_config_file }}"
+    owner: "{{ toolbox_user }}"
+    group: "{{ toolbox_group }}"
+    mode: "0644"
+  when: toolbox_user != "root"
+
+- name: Create server configuration (root)
+  template:
+    src: server.json.j2
+    dest: "{{ toolbox_config_file }}"
+    mode: "0644"
+  when: toolbox_user == "root"
+
+- name: Create settings configuration if not exists
+  copy:
+    content: "{}"
+    dest: "{{ toolbox_settings_file }}"
+    owner: "{{ toolbox_user }}"
+    group: "{{ toolbox_group }}"
+    mode: "0644"
+    force: false
+  when: toolbox_user != "root"
+
+- name: Create settings configuration if not exists (root)
+  copy:
+    content: "{}"
+    dest: "{{ toolbox_settings_file }}"
+    mode: "0644"
+    force: false
+  when: toolbox_user == "root"
+
+- name: Install systemd service
+  template:
+    src: toolbox.service.j2
+    dest: "/etc/systemd/system/{{ toolbox_service_name }}.service"
+    mode: "0644"
+  notify: restart toolbox
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: true
+
+- name: Enable toolbox service
+  systemd:
+    name: "{{ toolbox_service_name }}"
+    enabled: "{{ toolbox_service_enabled | bool }}"
+
+- name: Start toolbox service
+  systemd:
+    name: "{{ toolbox_service_name }}"
+    state: "{{ toolbox_service_state }}"
+  when: toolbox_service_state != "stopped"
+
+- name: Verify service is running
+  wait_for:
+    port: "{{ toolbox_port }}"
+    timeout: 30
+  when: toolbox_service_state != "stopped"
+
+- name: Display installation summary
+  debug:
+    msg: |
+      Toolbox installed successfully!
+      
+      Service: {{ toolbox_service_name }}
+      Port: {{ toolbox_port }}
+      URL: http://localhost:{{ toolbox_port }}
+      Config: {{ toolbox_config_file }}
+      Logs: journalctl -u {{ toolbox_service_name }} -f
